@@ -63,7 +63,11 @@ public class AnnotationConfigEmbeddedWebApplicationContext extends EmbeddedWebAp
 	 * refreshed}.
 	 */
 	public AnnotationConfigEmbeddedWebApplicationContext() {
+		//初始化 reader  AnnotationConfigUtils.registerAnnotationConfigProcessors() 会 在context 中注册多个beanFactoryPostProcessor
 		this.reader = new AnnotatedBeanDefinitionReader(this);
+		//初始化 scanner
+		//ClassPathBeanDefinitionScanner是一个bean definition的扫描器
+		// 可以扫描类路径下的候选的bean,并在给定的registry注册bean definition
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 

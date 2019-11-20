@@ -47,7 +47,10 @@ import org.springframework.core.annotation.AliasFor;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
+//@SpringBootConfiguration 复合 @Configuration
 @SpringBootConfiguration
+//@EnableAutoConfiguration import EnableAutoConfigurationImportSelector
+//处理 spring.factories 中  EnableAutoConfiguration
 @EnableAutoConfiguration
 @ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
 		@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })

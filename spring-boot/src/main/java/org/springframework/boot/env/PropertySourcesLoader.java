@@ -64,6 +64,9 @@ public class PropertySourcesLoader {
 	public PropertySourcesLoader(MutablePropertySources propertySources) {
 		Assert.notNull(propertySources, "PropertySources must not be null");
 		this.propertySources = propertySources;
+		//List<PropertySourceLoader> spi spring.factories 获取
+		//org.springframework.boot.env.PropertiesPropertySourceLoader
+		//org.springframework.boot.env.YamlPropertySourceLoader
 		this.loaders = SpringFactoriesLoader.loadFactories(PropertySourceLoader.class, getClass().getClassLoader());
 	}
 

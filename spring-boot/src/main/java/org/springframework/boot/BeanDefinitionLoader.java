@@ -78,11 +78,14 @@ class BeanDefinitionLoader {
 		Assert.notNull(registry, "Registry must not be null");
 		Assert.notEmpty(sources, "Sources must not be empty");
 		this.sources = sources;
+		//注解 beanDefinitionReader
 		this.annotatedReader = new AnnotatedBeanDefinitionReader(registry);
+		//xml beanDefinitionReader
 		this.xmlReader = new XmlBeanDefinitionReader(registry);
 		if (isGroovyPresent()) {
 			this.groovyReader = new GroovyBeanDefinitionReader(registry);
 		}
+		//ClassPathBeanDefinitionScanner
 		this.scanner = new ClassPathBeanDefinitionScanner(registry);
 		this.scanner.addExcludeFilter(new ClassExcludeFilter(sources));
 	}
@@ -129,15 +132,15 @@ class BeanDefinitionLoader {
 		return count;
 	}
 
-	private int load(Object source) {
+	private int load(Object source) {//根据不同的source类型使用不同的方法加载
 		Assert.notNull(source, "Source must not be null");
-		if (source instanceof Class<?>) {
+		if (source instanceof Class<?>) {//class annotationReader 加载
 			return load((Class<?>) source);
 		}
-		if (source instanceof Resource) {
+		if (source instanceof Resource) {//resource xmlReader 加载
 			return load((Resource) source);
 		}
-		if (source instanceof Package) {
+		if (source instanceof Package) {//package
 			return load((Package) source);
 		}
 		if (source instanceof CharSequence) {
@@ -155,6 +158,8 @@ class BeanDefinitionLoader {
 				load(loader);
 			}
 		}
+		//如果source被component注解
+		// 则使用AnnotatedBeanDefinitionReader来注册source的bean definition
 		if (isComponent(source)) {
 			this.annotatedReader.register(source);
 			return 1;
@@ -176,10 +181,12 @@ class BeanDefinitionLoader {
 			}
 			return this.groovyReader.loadBeanDefinitions(source);
 		}
+		//resource 使用xmlReader 加载
 		return this.xmlReader.loadBeanDefinitions(source);
 	}
 
 	private int load(Package source) {
+		//package  使用 scanner 扫描
 		return this.scanner.scan(source.getName());
 	}
 

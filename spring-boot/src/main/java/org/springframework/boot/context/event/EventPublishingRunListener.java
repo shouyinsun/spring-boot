@@ -66,11 +66,13 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 	@Override
 	@SuppressWarnings("deprecation")
 	public void starting() {
+		//多播 ApplicationStartedEvent
 		this.initialMulticaster.multicastEvent(new ApplicationStartedEvent(this.application, this.args));
 	}
 
 	@Override
 	public void environmentPrepared(ConfigurableEnvironment environment) {
+		//多播 ApplicationEnvironmentPreparedEvent
 		this.initialMulticaster
 				.multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
 	}
@@ -82,17 +84,21 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 
 	@Override
 	public void contextLoaded(ConfigurableApplicationContext context) {
+		//context loaded 之后,如果 listener 实现 ApplicationContextAware
+		// 为其设置ApplicationContext
 		for (ApplicationListener<?> listener : this.application.getListeners()) {
 			if (listener instanceof ApplicationContextAware) {
 				((ApplicationContextAware) listener).setApplicationContext(context);
 			}
 			context.addApplicationListener(listener);
 		}
+		//多播 ApplicationEnvironmentPreparedEvent
 		this.initialMulticaster.multicastEvent(new ApplicationPreparedEvent(this.application, this.args, context));
 	}
 
 	@Override
 	public void finished(ConfigurableApplicationContext context, Throwable exception) {
+		//判断是ApplicationFailedEvent 还是 ApplicationReadyEvent
 		SpringApplicationEvent event = getFinishedEvent(context, exception);
 		if (context != null && context.isActive()) {
 			// Listeners have been registered to the application context so we should

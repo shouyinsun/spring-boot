@@ -61,9 +61,12 @@ class StartupInfoLogger {
 	private String getStartupMessage() {
 		StringBuilder message = new StringBuilder();
 		message.append("Starting ");
+		//sourceClass
 		message.append(getApplicationName());
 		message.append(getVersion(this.sourceClass));
+		//hostname
 		message.append(getOn());
+		//pid
 		message.append(getPid());
 		message.append(getContext());
 		return message.toString();

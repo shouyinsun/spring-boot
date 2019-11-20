@@ -102,6 +102,10 @@ import org.springframework.validation.BindException;
  * @author Eddú Meléndez
  * @since 1.0.0
  */
+//ConfigFileApplicationListener 实现了 EnvironmentPostProcessor
+//load spring boot 的 配置文件  查找顺序："classpath:/,classpath:/config/,file:./,file:./config/";
+//load '.properties' files
+//load '.yml' (or '.yaml') files
 public class ConfigFileApplicationListener implements EnvironmentPostProcessor, SmartApplicationListener, Ordered {
 
 	private static final String DEFAULT_PROPERTIES = "defaultProperties";
@@ -164,18 +168,25 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
+		//ApplicationEnvironmentPreparedEvent 环境准备事件
 		if (event instanceof ApplicationEnvironmentPreparedEvent) {
 			onApplicationEnvironmentPreparedEvent((ApplicationEnvironmentPreparedEvent) event);
 		}
+		//ApplicationPreparedEvent application准备事件
 		if (event instanceof ApplicationPreparedEvent) {
 			onApplicationPreparedEvent(event);
 		}
 	}
 
+	//EnvironmentPostProcessor 是在 ConfigFileApplicationListener 的 onApplicationEnvironmentPreparedEvent 中进行处理的
 	private void onApplicationEnvironmentPreparedEvent(ApplicationEnvironmentPreparedEvent event) {
+		//spring.factories 配置的 EnvironmentPostProcessor
 		List<EnvironmentPostProcessor> postProcessors = loadPostProcessors();
+		//将自身作为一个 EnvironmentPostProcessor 加入 postProcessors
 		postProcessors.add(this);
+		//sort
 		AnnotationAwareOrderComparator.sort(postProcessors);
+		//EnvironmentPostProcessor 调用 postProcessEnvironment
 		for (EnvironmentPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessEnvironment(event.getEnvironment(), event.getSpringApplication());
 		}
@@ -187,6 +198,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+		//添加 加载配置文件的propertySource
 		addPropertySources(environment, application.getResourceLoader());
 		configureIgnoreBeanInfo(environment);
 		bindToSpringApplication(environment, application);
@@ -212,7 +224,9 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 	 * @see #addPostProcessors(ConfigurableApplicationContext)
 	 */
 	protected void addPropertySources(ConfigurableEnvironment environment, ResourceLoader resourceLoader) {
+		//加入对 RandomValuePropertySource 随机值的支持,处理 "random." 前缀
 		RandomValuePropertySource.addToEnvironment(environment);
+		//load 配置文件
 		new Loader(environment, resourceLoader).load();
 	}
 
@@ -333,6 +347,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 		}
 
 		public void load() {
+			//PropertySourcesLoader ：PropertiesPropertySourceLoader 和 YamlPropertySourceLoader
 			this.propertiesLoader = new PropertySourcesLoader();
 			this.activatedProfiles = false;
 			this.profiles = Collections.asLifoQueue(new LinkedList<Profile>());
@@ -374,10 +389,12 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 				this.processedProfiles.add(profile);
 			}
 
+			//environment 添加 propertySource
 			addConfigurationProperties(this.propertiesLoader.getPropertySources());
 		}
 
 		private Set<Profile> initializeActiveProfiles() {
+			//spring.profiles.active 或 spring.profiles.include 属性的配置
 			if (!this.environment.containsProperty(ACTIVE_PROFILES_PROPERTY)
 					&& !this.environment.containsProperty(INCLUDE_PROFILES_PROPERTY)) {
 				return Collections.emptySet();
@@ -417,6 +434,8 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 			return unprocessedActiveProfiles;
 		}
 
+		//loade profile 对应的 配置文件
+		//文件: location + name + "-" + profile + "." + ext
 		private void load(String location, String name, Profile profile) {
 			String group = "profile=" + ((profile != null) ? profile : "");
 			if (!StringUtils.hasText(name)) {
@@ -425,6 +444,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 			}
 			else {
 				// Search for a file with the given name
+				//属性加载器的文件后缀  "properties","xml","yml","yaml"
 				for (String ext : this.propertiesLoader.getAllFileExtensions()) {
 					if (profile != null) {
 						// Try the profile-specific file
@@ -622,15 +642,18 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 			for (PropertySource<?> item : sources) {
 				reorderedSources.add(item);
 			}
+			//增加一个 ConfigurationPropertySources
 			addConfigurationProperties(new ConfigurationPropertySources(reorderedSources));
 		}
 
 		private void addConfigurationProperties(ConfigurationPropertySources configurationSources) {
 			MutablePropertySources existingSources = this.environment.getPropertySources();
 			if (existingSources.contains(DEFAULT_PROPERTIES)) {
+				//放在 defaultProperties 之前
 				existingSources.addBefore(DEFAULT_PROPERTIES, configurationSources);
 			}
 			else {
+				//加在 propertySources 的最后
 				existingSources.addLast(configurationSources);
 			}
 		}
